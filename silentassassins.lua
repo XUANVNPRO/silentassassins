@@ -1,209 +1,319 @@
---Bùm bùm chéo chéo con mẹ mày béo
---https://discord.gg/usv255Pw4t 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 
-if CoreGui:FindFirstChild("tzuanSmartUI") then
-    CoreGui.tzuanSmartUI:Destroy()
-end
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
-local SG = Instance.new("ScreenGui")
-SG.Name = "tzuanSmartUI"
-SG.Parent = CoreGui
-
-local ToggleBtn = Instance.new("TextButton")
-ToggleBtn.Size = UDim2.new(0, 20, 0, 20)
-ToggleBtn.Position = UDim2.new(0, 10, 0, 10)
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-ToggleBtn.Text = ""
-ToggleBtn.BorderSizePixel = 0
-ToggleBtn.Active = true
-ToggleBtn.Draggable = true
-ToggleBtn.Parent = SG
-
-local ToggleCorner = Instance.new("UICorner")
-ToggleCorner.CornerRadius = UDim.new(1, 0)
-ToggleCorner.Parent = ToggleBtn
-
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 240, 0, 140)
-MainFrame.Position = UDim2.new(0.5, -120, 0.5, -70)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-MainFrame.Active = true
-MainFrame.Draggable = true
-MainFrame.Parent = SG
-
-ToggleBtn.MouseButton1Click:Connect(function()
-    MainFrame.Visible = not MainFrame.Visible
-end)
-
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-Title.TextColor3 = Color3.fromRGB(255, 200, 0)
-Title.Text = "⚡ tzuan "
-Title.Font = Enum.Font.SourceSansBold
-Title.TextSize = 16
-Title.Parent = MainFrame
-
-local AutoBtn = Instance.new("TextButton")
-AutoBtn.Size = UDim2.new(0.9, 0, 0, 40)
-AutoBtn.Position = UDim2.new(0.05, 0, 0, 40)
-AutoBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-AutoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-AutoBtn.Text = "Auto Round(Chỉ bật ở sảnh): OFF"
-AutoBtn.Font = Enum.Font.SourceSansBold
-AutoBtn.TextSize = 15
-AutoBtn.Parent = MainFrame
-
-local ESPBtn = Instance.new("TextButton")
-ESPBtn.Size = UDim2.new(0.9, 0, 0, 40)
-ESPBtn.Position = UDim2.new(0.05, 0, 0, 90)
-ESPBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 200)
-ESPBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ESPBtn.Text = "ESP Xuyên Tàng Hình: OFF"
-ESPBtn.Font = Enum.Font.SourceSansBold
-ESPBtn.TextSize = 15
-ESPBtn.Parent = MainFrame
+local Window = Rayfield:CreateWindow({
+    Name = "⚡ Tzuan Hub | SILENT ASSASSIN",
+    LoadingTitle = "Đang tải Tzuan Hub",
+    LoadingSubtitle = "by Tzuan",
+    ConfigurationSaving = {
+        Enabled = false
+    },
+    Discord = {
+        Enabled = false
+    },
+    KeySystem = false
+})
 
 _G.AutoRound = false
+_G.KillAura = false
+_G.AuraRange = 20
 _G.ESPEnabled = false
-_G.LobbyPos = nil
-local SAFE_RADIUS = 40 
+_G.ESPColor = Color3.fromRGB(255, 0, 0)
+_G.WalkSpeed = 16
+_G.JumpPower = 50
+_G.AutoEquip = false
+_G.InMatch = false
+_G.LastUIScan = 0
 
-AutoBtn.MouseButton1Click:Connect(function()
-    _G.AutoRound = not _G.AutoRound
-    if _G.AutoRound then 
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            _G.LobbyPos = LocalPlayer.Character.HumanoidRootPart.Position
-            AutoBtn.Text = "Đang ở Sảnh (Chờ vô trận...)"
-            AutoBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-        else
-            AutoBtn.Text = "Lỗi: Nhân vật chưa load!"
-            _G.AutoRound = false
+local CombatTab = Window:CreateTab("⚔️ Combat", nil)
+local VisualTab = Window:CreateTab("👁️ Visuals", nil)
+local MoveTab = Window:CreateTab("🏃 Movement", nil)
+local InfoTab = Window:CreateTab("⚙️ Info & Link", nil)
+
+CombatTab:CreateToggle({
+    Name = "Auto Round (Ghost Sensor + Aim Kill)",
+    CurrentValue = false,
+    Flag = "AutoRoundToggle",
+    Callback = function(Value)
+        _G.AutoRound = Value
+        _G.InMatch = false
+        if Value then
+            Rayfield:Notify({Title = "Tzuan System", Content = "Đã bật chế độ tàn sát tự động!", Duration = 2})
         end
-    else
-        AutoBtn.Text = "Auto Round(Chỉ bật ở sảnh): OFF"
-        AutoBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-        _G.LobbyPos = nil
+    end
+})
+
+CombatTab:CreateToggle({
+    Name = "Kill Aura (Chém Bluetooth tự động gần)",
+    CurrentValue = false,
+    Flag = "KillAuraToggle",
+    Callback = function(Value)
+        _G.KillAura = Value
+    end
+})
+
+CombatTab:CreateSlider({
+    Name = "Phạm vi Kill Aura (Studs)",
+    Range = {10, 1000},
+    Increment = 1,
+    CurrentValue = 20,
+    Flag = "AuraSlider",
+    Callback = function(Value)
+        _G.AuraRange = Value
+    end
+})
+
+VisualTab:CreateToggle({
+    Name = "Bật ESP (Xuyên Tàng Hình)",
+    CurrentValue = false,
+    Flag = "ESPToggle",
+    Callback = function(Value)
+        _G.ESPEnabled = Value
+    end
+})
+
+VisualTab:CreateColorPicker({
+    Name = "Chọn Màu ESP",
+    Color = Color3.fromRGB(255, 0, 0),
+    Flag = "ESPColorPicker",
+    Callback = function(Value)
+        _G.ESPColor = Value
+    end
+})
+
+MoveTab:CreateToggle({
+    Name = "Auto Equip Vũ Khí",
+    CurrentValue = false,
+    Flag = "EquipToggle",
+    Callback = function(Value)
+        _G.AutoEquip = Value
+    end
+})
+
+MoveTab:CreateSlider({
+    Name = "Hack Tốc Độ (WalkSpeed)",
+    Range = {16, 200},
+    Increment = 1,
+    CurrentValue = 16,
+    Flag = "SpeedSlider",
+    Callback = function(Value)
+        _G.WalkSpeed = Value
+    end
+})
+
+MoveTab:CreateSlider({
+    Name = "Hack Nhảy Cao (JumpPower)",
+    Range = {50, 300},
+    Increment = 1,
+    CurrentValue = 50,
+    Flag = "JumpSlider",
+    Callback = function(Value)
+        _G.JumpPower = Value
+    end
+})
+
+InfoTab:CreateLabel("Made with by Tzuan")
+
+InfoTab:CreateButton({
+    Name = "Tham gia Discord Server",
+    Callback = function()
+        setclipboard("https://discord.gg/usv255Pw4t")
+        Rayfield:Notify({Title = "Đã Copy!", Content = "Link Discord đã được chép vào bộ nhớ tạm!", Duration = 3})
+    end
+})
+
+local function KillTarget(target, dist)
+    local char = LocalPlayer.Character
+    local tool = char and char:FindFirstChildOfClass("Tool")
+    if not tool or not target:FindFirstChild("HumanoidRootPart") then return end
+    local args = {
+        [1] = "AttemptWeaponHit",
+        [2] = {
+            ["attackCycleData"] = {["knockbackMul"] = 1, ["slowMult"] = 0.2, ["slowTime"] = 1.5, ["lungeMul"] = 1, ["attackTime"] = 0.65},
+            ["knockback"] = 50,
+            ["shouldLock"] = true,
+            ["slowTime"] = 1.5,
+            ["shouldLunge"] = true,
+            ["isCritical"] = true,
+            ["weaponDefinition"] = {
+                ["attackCycle"] = {
+                    ["1"] = {["knockbackMul"] = 1, ["slowMult"] = 0.2, ["slowTime"] = 1.5, ["lungeMul"] = 1, ["attackTime"] = 0.65},
+                    ["2"] = {["lungeMul"] = 1, ["slowMult"] = 0.2, ["slowTime"] = 1.5, ["knockbackMul"] = 1, ["attackTime"] = 0.65},
+                    ["3"] = {["lungeMult"] = 0.75, ["slowMult"] = 0.2, ["slowTime"] = 1.5, ["knockbackMul"] = 1.5, ["attackTime"] = 0.716},
+                    ["4"] = {["lungeMul"] = 2.25, ["slowTime"] = 1.5, ["slowMult"] = 0.2, ["knockbackMul"] = 2.25, ["attackTime"] = 0.983}
+                },
+                ["attackOrder"] = {"1", "2", "3", "4"}
+            },
+            ["attackCooldown"] = 0.01,
+            ["shouldSlow"] = true,
+            ["lungeKnockback"] = 55,
+            ["hitboxSize"] = Vector3.new(120, 120, 120),
+            ["slowMult"] = 0.2,
+            ["cycleIndex"] = 1,
+            ["hitboxOffset"] = Vector3.new(0, 0, 0),
+            ["tool"] = tool,
+            ["damage"] = 999999999
+        },
+        [3] = {
+            [1] = {
+                ["direction"] = (target.HumanoidRootPart.Position - char.HumanoidRootPart.Position).Unit,
+                ["isClosestEnemy"] = true,
+                ["origin"] = char.HumanoidRootPart.Position,
+                ["enemyModel"] = target,
+                ["distance"] = dist,
+                ["knockback"] = 0
+            }
+        }
+    }
+    task.spawn(function()
+        ReplicatedStorage.Events.GameRemoteFunction:InvokeServer(unpack(args))
+    end)
+end
+
+local function IsMatchOver()
+    local pgui = LocalPlayer:FindFirstChild("PlayerGui")
+    if pgui then
+        for _, obj in pairs(pgui:GetDescendants()) do
+            if (obj:IsA("TextLabel") or obj:IsA("TextBox")) and obj.Visible and obj.Text ~= "" then
+                local t = string.lower(obj.Text)
+                if string.find(t, "thắng") or string.find(t, "dịch chuyển") or string.find(t, "thắng!") then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+RunService.Stepped:Connect(function()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
+        char.Humanoid.WalkSpeed = _G.WalkSpeed
+        char.Humanoid.JumpPower = _G.JumpPower
+        if _G.AutoEquip then
+            local bp = LocalPlayer:FindFirstChild("Backpack")
+            if bp then
+                local tool = bp:FindFirstChildOfClass("Tool")
+                if tool then char.Humanoid:EquipTool(tool) end
+            end
+        end
     end
 end)
 
-ESPBtn.MouseButton1Click:Connect(function()
-    _G.ESPEnabled = not _G.ESPEnabled
-    ESPBtn.Text = "ESP Xuyên Tàng Hình: " .. (_G.ESPEnabled and "ON" or "OFF")
-    ESPBtn.BackgroundColor3 = _G.ESPEnabled and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(50, 50, 200)
-end)
-
 task.spawn(function()
-    while task.wait(0.05) do        
+    while task.wait(0.05) do
         if _G.ESPEnabled then
             for _, enemy in pairs(Players:GetPlayers()) do
                 if enemy ~= LocalPlayer and enemy.Character then
                     local eHum = enemy.Character:FindFirstChild("Humanoid")
                     local eRoot = enemy.Character:FindFirstChild("HumanoidRootPart")
-                    
                     if eHum and eHum.Health > 0 and eRoot then
-                        local hl = enemy.Character:FindFirstChild("tzuanHL")
+                        local hl = enemy.Character:FindFirstChild("TzuanHL")
                         if not hl then
                             hl = Instance.new("Highlight")
-                            hl.Name = "tzuanHL"
-                            hl.FillColor = Color3.fromRGB(255, 0, 0)
-                            hl.FillTransparency = 0.5
-                            hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                            hl.Name = "TzuanHL"
                             hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
                             hl.Parent = enemy.Character
                         end
-
-                        local tracker = eRoot:FindFirstChild("tzuanTracker")
+                        hl.FillColor = _G.ESPColor
+                        hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                        hl.FillTransparency = 0.5
+                        local tracker = eRoot:FindFirstChild("TzuanTracker")
                         if not tracker then
                             tracker = Instance.new("BillboardGui")
-                            tracker.Name = "tzuanTracker"
+                            tracker.Name = "TzuanTracker"
                             tracker.AlwaysOnTop = true
                             tracker.Size = UDim2.new(4, 0, 5, 0)
                             local frame = Instance.new("Frame")
+                            frame.Name = "FrameColor"
                             frame.Size = UDim2.new(1, 0, 1, 0)
-                            frame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
                             frame.BackgroundTransparency = 0.6
                             frame.BorderSizePixel = 2
                             frame.BorderColor3 = Color3.fromRGB(255, 255, 255)
                             frame.Parent = tracker
                             tracker.Parent = eRoot
                         end
-                                                
+                        if tracker:FindFirstChild("FrameColor") then
+                            tracker.FrameColor.BackgroundColor3 = _G.ESPColor
+                        end
                         for _, part in pairs(enemy.Character:GetChildren()) do
                             if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" and part.Transparency == 1 then
                                 part.Transparency = 0.5 
                             end
                         end
                     else
-                        if enemy.Character:FindFirstChild("tzuanHL") then enemy.Character.tzuanHL:Destroy() end
-                        if eRoot and eRoot:FindFirstChild("tzuanTracker") then eRoot.tzuanTracker:Destroy() end
+                        if enemy.Character:FindFirstChild("TzuanHL") then enemy.Character.TzuanHL:Destroy() end
+                        if eRoot and eRoot:FindFirstChild("TzuanTracker") then eRoot.TzuanTracker:Destroy() end
                     end
                 end
             end
         else
             for _, enemy in pairs(Players:GetPlayers()) do
                 if enemy.Character then
-                    if enemy.Character:FindFirstChild("tzuanHL") then enemy.Character.tzuanHL:Destroy() end
+                    if enemy.Character:FindFirstChild("TzuanHL") then enemy.Character.TzuanHL:Destroy() end
                     local eRoot = enemy.Character:FindFirstChild("HumanoidRootPart")
-                    if eRoot and eRoot:FindFirstChild("tzuanTracker") then eRoot.tzuanTracker:Destroy() end
+                    if eRoot and eRoot:FindFirstChild("TzuanTracker") then eRoot.TzuanTracker:Destroy() end
                 end
             end
         end
-        
-        if _G.AutoRound and _G.LobbyPos and LocalPlayer.Character then
+        if LocalPlayer.Character then
             local myChar = LocalPlayer.Character
             local myRoot = myChar:FindFirstChild("HumanoidRootPart")
             local myHum = myChar:FindFirstChild("Humanoid")
-            
-            if myRoot and myHum and myHum.Health > 0 then                
+            local myHead = myChar:FindFirstChild("Head")
+            if myRoot and myHum and myHum.Health > 0 and myHead then
+                local tool = myChar:FindFirstChildOfClass("Tool")
                 
-                local myDistFromLobby = (myRoot.Position - _G.LobbyPos).Magnitude
-                
-                if myDistFromLobby <= SAFE_RADIUS then                    
-                    AutoBtn.Text = "Đang ở Sảnh (Chờ vô trận...)"
-                    AutoBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-                else                    
-                    local tool = myChar:FindFirstChildOfClass("Tool")
-                    if not tool then
-                        local bpTool = LocalPlayer.Backpack:FindFirstChildOfClass("Tool")
-                        if bpTool then myHum:EquipTool(bpTool) end
+                if _G.AutoRound then
+                    local isMatchOverUI = false
+                    if tick() - _G.LastUIScan > 0.5 then
+                        _G.LastUIScan = tick()
+                        if IsMatchOver() then _G.InMatch = false isMatchOverUI = true end
                     end
-                    
-                    if tool then
-                        local bringPos = myRoot.Position + (myRoot.CFrame.LookVector * 4)
-                        local validEnemies = 0
-                                                
+                    if not _G.InMatch and myHead.Transparency >= 0.5 and not isMatchOverUI then
+                        _G.InMatch = true
+                    end
+                    if _G.InMatch and tool then
+                        local hasFired = false
                         for _, enemy in pairs(Players:GetPlayers()) do
                             if enemy ~= LocalPlayer and enemy.Character then
-                                local eRoot = enemy.Character:FindFirstChild("HumanoidRootPart")
                                 local eHum = enemy.Character:FindFirstChild("Humanoid")
-                                                                
-                                if eRoot and eHum and eHum.Health > 0 and not enemy.Character:FindFirstChildOfClass("ForceField") then
-                                                                       
-                                    local enemyDistFromLobby = (eRoot.Position - _G.LobbyPos).Magnitude
-                                    if enemyDistFromLobby > SAFE_RADIUS then
-                                        eRoot.CFrame = CFrame.new(bringPos)
-                                        validEnemies = validEnemies + 1
+                                local eHead = enemy.Character:FindFirstChild("Head")
+                                local eRoot = enemy.Character:FindFirstChild("HumanoidRootPart")
+                                if eHum and eHum.Health > 0 and eHead and eRoot and not enemy.Character:FindFirstChildOfClass("ForceField") then
+                                    if eHead.Transparency >= 0.5 or enemy.Character:FindFirstChildOfClass("Tool") then
+                                        local dist = (myRoot.Position - eRoot.Position).Magnitude
+                                        KillTarget(enemy.Character, dist)
+                                        hasFired = true
                                     end
                                 end
                             end
                         end
-                                                
-                        if validEnemies > 0 then
-                            AutoBtn.Text = "🔥 ĐANG CHÉM (" .. validEnemies .. " ĐỊCH)"
-                            AutoBtn.BackgroundColor3 = Color3.fromRGB(255, 100, 0)
-                            
-                            task.wait(0.2) 
+                        if hasFired and tool.Parent == myChar then
                             tool:Activate()
                             task.wait(0.05)
                             tool:Deactivate()
-                        else                            
-                            AutoBtn.Text = "🏆 THẮNG! (Chờ về Sảnh...)"
-                            AutoBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+                            task.wait(0.2)
+                        end
+                    end
+                end
+
+                if _G.KillAura and tool then
+                    for _, enemy in pairs(Players:GetPlayers()) do
+                        if enemy ~= LocalPlayer and enemy.Character then
+                            local eRoot = enemy.Character:FindFirstChild("HumanoidRootPart")
+                            local eHum = enemy.Character:FindFirstChild("Humanoid")
+                            if eRoot and eHum and eHum.Health > 0 and not enemy.Character:FindFirstChildOfClass("ForceField") then
+                                local dist = (myRoot.Position - eRoot.Position).Magnitude
+                                if dist <= _G.AuraRange then
+                                    KillTarget(enemy.Character, dist)
+                                end
+                            end
                         end
                     end
                 end
